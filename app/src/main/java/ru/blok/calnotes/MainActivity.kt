@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,7 +15,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import java.time.LocalDate
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
     val openDate = mutableStateOf<LocalDate?>(null)
     val resumeTick = mutableIntStateOf(0)
@@ -30,8 +30,9 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemePrefs.init(this)
         super.onCreate(savedInstanceState)
+        try { ThemePrefs.init(this) } catch (_: Exception) { }
+        applyWindowBackground(this)
         enableEdgeToEdge()
         handleIntent(intent)
         if (Build.VERSION.SDK_INT >= 33 && !Reminders.notificationsAllowed(this)) {

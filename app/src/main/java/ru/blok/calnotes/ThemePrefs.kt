@@ -2,11 +2,10 @@ package ru.blok.calnotes
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-/** Режим темы: как в системе (по умолчанию), светлая или тёмная. */
+/** Режим темы: как в системе (по умолчанию), светлая или тёмная. Без AppCompatDelegate. */
 object ThemePrefs {
     const val SYSTEM = "system"
     const val LIGHT = "light"
@@ -15,29 +14,28 @@ object ThemePrefs {
     private const val PREFS = "settings"
     private const val KEY = "theme"
 
-    private lateinit var prefs: SharedPreferences
+    private var prefs: SharedPreferences? = null
     private val _mode = MutableStateFlow(SYSTEM)
     val mode: StateFlow<String> get() = _mode
 
     @Synchronized
     fun init(ctx: Context) {
-        if (::prefs.isInitialized) {
-            applyDelegate(_mode.value)
-            return
+        try {
+            if (prefs != null) return
+            val p = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            _mode.value = parse(runCatching { p.getString(KEY, SYSTEM) }.getOrNull())
+            prefs = p
+        } catch (_: Exception) {
+            _mode.value = SYSTEM
         }
-        prefs = ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        _mode.value = prefs.getString(KEY, SYSTEM) ?: SYSTEM
-        applyDelegate(_mode.value)
     }
 
     fun set(value: String) {
-        val v = when (value) {
-            LIGHT, DARK -> value
-            else -> SYSTEM
-        }
-        if (::prefs.isInitialized) prefs.edit().putString(KEY, v).apply()
+        val v = parse(value)
         _mode.value = v
-        applyDelegate(v)
+        try {
+            prefs?.edit()?.putString(KEY, v)?.apply()
+        } catch (_: Exception) { }
     }
 
     fun isDark(systemDark: Boolean, mode: String = _mode.value): Boolean = when (mode) {
@@ -46,14 +44,15 @@ object ThemePrefs {
         else -> systemDark
     }
 
-    private fun applyDelegate(value: String) {
-        val night = when (value) {
-            LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-            DARK -> AppCompatDelegate.MODE_NIGHT_YES
-            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        }
-        if (AppCompatDelegate.getDefaultNightMode() != night) {
-            AppCompatDelegate.setDefaultNightMode(night)
-        }
+    fun systemIsDark(ctx: Context): Boolean = try {
+        val night = ctx.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        night == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun parse(raw: String?): String = when (raw) {
+        LIGHT, DARK, SYSTEM -> raw
+        else -> SYSTEM
     }
 }

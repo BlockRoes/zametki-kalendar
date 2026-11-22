@@ -43,14 +43,20 @@ fun UpdateHost(activity: MainActivity, checkTick: Int) {
             if (checkedAuto) return@LaunchedEffect
             checkedAuto = true
         }
-        val result = withContext(Dispatchers.IO) { runCatching { Updater.checkBlocking(activity) } }
-        val found = result.getOrNull()
-        when {
-            found != null -> { info = found; phase = Phase.Offer }
-            manual && result.isFailure ->
-                Toast.makeText(activity, "Не удалось проверить обновления. Проверьте интернет.", Toast.LENGTH_LONG).show()
-            manual ->
-                Toast.makeText(activity, "У вас последняя версия (${Updater.installedName(activity)})", Toast.LENGTH_SHORT).show()
+        try {
+            val result = withContext(Dispatchers.IO) { runCatching { Updater.checkBlocking(activity) } }
+            val found = result.getOrNull()
+            when {
+                found != null -> { info = found; phase = Phase.Offer }
+                manual && result.isFailure ->
+                    Toast.makeText(activity, "Не удалось проверить обновления. Проверьте интернет.", Toast.LENGTH_LONG).show()
+                manual ->
+                    Toast.makeText(activity, "У вас последняя версия (${Updater.installedName(activity)})", Toast.LENGTH_SHORT).show()
+            }
+        } catch (_: Exception) {
+            if (manual) {
+                try { Toast.makeText(activity, "Не удалось проверить обновления. Проверьте интернет.", Toast.LENGTH_LONG).show() } catch (_: Exception) { }
+            }
         }
     }
 

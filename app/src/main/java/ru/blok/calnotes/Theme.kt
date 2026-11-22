@@ -1,6 +1,7 @@
 package ru.blok.calnotes
 
 import android.app.Activity
+import android.graphics.Color as AndroidColor
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -29,25 +30,44 @@ private val Dark = darkColorScheme(
     tertiary = Color(0xFFFFC94A), error = Color(0xFFFFB4AB),
 )
 
+private const val WINDOW_LIGHT = 0xFFFAFAFA.toInt()
+private const val WINDOW_DARK = 0xFF121212.toInt()
+
 @Composable
 fun CalNotesTheme(content: @Composable () -> Unit) {
     val mode by ThemePrefs.mode.collectAsState()
     val dark = ThemePrefs.isDark(isSystemInDarkTheme(), mode)
     val ctx = LocalContext.current
     val scheme = when {
-        Build.VERSION.SDK_INT >= 31 -> if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
+        Build.VERSION.SDK_INT >= 31 -> try {
+            if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
+        } catch (_: Exception) {
+            if (dark) Dark else Light
+        }
         dark -> Dark
         else -> Light
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as? Activity)?.window ?: return@SideEffect
-            WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = !dark
-                isAppearanceLightNavigationBars = !dark
-            }
+            try {
+                val window = (view.context as? Activity)?.window ?: return@SideEffect
+                window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(if (dark) WINDOW_DARK else WINDOW_LIGHT))
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            } catch (_: Exception) { }
         }
     }
     MaterialTheme(colorScheme = scheme, content = content)
+}
+
+fun applyWindowBackground(activity: Activity) {
+    try {
+        val dark = ThemePrefs.isDark(ThemePrefs.systemIsDark(activity))
+        activity.window.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(if (dark) WINDOW_DARK else WINDOW_LIGHT)
+        )
+    } catch (_: Exception) { }
 }

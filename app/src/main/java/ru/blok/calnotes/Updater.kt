@@ -26,13 +26,14 @@ object Updater {
     const val REPO = "BlockRoes/zametki-kalendar"
     private const val VERSION_URL = "https://github.com/$REPO/releases/latest/download/version.json"
 
-    fun installedCode(ctx: Context): Long {
+    fun installedCode(ctx: Context): Long = try {
         val pi = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
-        return if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
-    }
+        if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
+    } catch (_: Exception) { 0L }
 
-    fun installedName(ctx: Context): String =
+    fun installedName(ctx: Context): String = try {
         ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "?"
+    } catch (_: Exception) { "?" }
 
     private fun open(url: String): HttpURLConnection =
         (URL(url).openConnection() as HttpURLConnection).apply {
