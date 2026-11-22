@@ -494,11 +494,14 @@ private fun SettingsDialog(activity: MainActivity, tick: Int, onCheckUpdates: ()
     val notifOk = remember(tick) { Reminders.notificationsAllowed(activity) }
     val exactOk = remember(tick) { Reminders.canExact(activity) }
     val batteryOk = remember(tick) { activity.isIgnoringBattery() }
+    val theme by ThemePrefs.mode.collectAsStateWithLifecycle()
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Разрешения") },
+        title = { Text("Настройки") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Тема", style = MaterialTheme.typography.titleSmall)
+                ThemeChoice(theme) { ThemePrefs.set(it) }
                 PermRow("Уведомления", notifOk) { activity.requestNotifications() }
                 if (Build.VERSION.SDK_INT >= 31) PermRow("Точные будильники", exactOk) { activity.openExactAlarmSettings() }
                 PermRow("Без ограничений батареи", batteryOk) { activity.requestBatteryExemption() }
@@ -515,6 +518,28 @@ private fun SettingsDialog(activity: MainActivity, tick: Int, onCheckUpdates: ()
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Готово") } },
     )
+}
+
+@Composable
+private fun ThemeChoice(selected: String, onSelect: (String) -> Unit) {
+    val options = listOf(
+        ThemePrefs.SYSTEM to "Как в системе",
+        ThemePrefs.LIGHT to "Светлая",
+        ThemePrefs.DARK to "Тёмная",
+    )
+    Column {
+        options.forEach { (value, label) ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelect(value) },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = selected == value, onClick = { onSelect(value) })
+                Text(label, Modifier.padding(start = 4.dp))
+            }
+        }
+    }
 }
 
 @Composable

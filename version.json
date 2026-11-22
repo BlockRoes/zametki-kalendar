@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
-  "versionName": "1.2",
-  "apkUrl": "https://github.com/BlockRoes/zametki-kalendar/releases/download/v1.2/Zametki-kalendar-1.2.apk",
-  "changelog": "Автообновление и выбор звука",
-  "sha256": "399f7ec0019360adeb8def9f8bd347461abd25d623703d02865ca6d59dfe4920"
+  "versionCode": 4,
+  "versionName": "1.3",
+  "apkUrl": "https://github.com/BlockRoes/zametki-kalendar/releases/download/v1.3/Zametki-kalendar-1.3.apk",
+  "changelog": "Выбор темы в настройках",
+  "sha256": "f84e04f9b2a4597b08a5abdbbb22236fec4fa0417160b879795a10802a84d115"
 }

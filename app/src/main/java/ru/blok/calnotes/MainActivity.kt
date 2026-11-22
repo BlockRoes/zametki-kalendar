@@ -7,7 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,7 +15,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import java.time.LocalDate
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     val openDate = mutableStateOf<LocalDate?>(null)
     val resumeTick = mutableIntStateOf(0)
@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemePrefs.init(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleIntent(intent)
