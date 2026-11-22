@@ -34,7 +34,27 @@ PY
 if git ls-files | grep -Eq '\.jks$|keystore\.properties|local\.properties|\.apk$'; then
   echo "ОШИБКА: в git попали секреты/APK" >&2; exit 1
 fi
-git add -A && git commit -m "Release $NAME" || true
-git tag -f "$TAG" && git push origin HEAD "$TAG" --force
-gh release create "$TAG" "$APK" version.json --repo "$REPO" --title "Заметки-календарь $NAME" --notes "$CHANGELOG"
+git add -A
+git diff --cached --quiet || git commit -m "Release $NAME"
+
+# remote без токена в URL; доступ через GH_TOKEN / gh credential helper
+if git remote get-url origin >/dev/null 2>&1; then
+  git remote set-url origin "https://github.com/$REPO.git"
+else
+  git remote add origin "https://github.com/$REPO.git"
+fi
+REMOTE_URL=$(git remote get-url origin)
+case "$REMOTE_URL" in
+  *ghp_*|*github_pat_*|*@*) echo "ОШИБКА: в URL remote есть учётные данные: проверьте origin" >&2; exit 1 ;;
+esac
+
+git tag -f "$TAG"
+git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push -u origin HEAD "refs/tags/$TAG"
+
+if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+  gh release upload "$TAG" "$APK" version.json --repo "$REPO" --clobber
+  gh release edit "$TAG" --repo "$REPO" --title "Заметки-календарь $NAME" --notes "$CHANGELOG"
+else
+  gh release create "$TAG" "$APK" version.json --repo "$REPO" --title "Заметки-календарь $NAME" --notes "$CHANGELOG"
+fi
 echo "Готово: https://github.com/$REPO/releases/tag/$TAG"
